@@ -7,8 +7,7 @@ import { AllTractatesView } from '@/components/all-tractates-view';
 import { CalendarView } from '@/components/calendar-view';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Moon, Sun, RotateCcw, BookOpen, Calendar } from 'lucide-react';
-import { useTheme } from '@/hooks/use-theme';
+import { RotateCcw, BookOpen, Calendar } from 'lucide-react';
 import { getMishnaFromIndex, TOTAL_MISHNAYOT } from '@/lib/mishna-data';
 import { getMishnayotForDate } from '@/lib/date-utils';
 import { loadProgress, toggleChapter, resetProgress, type MishnaProgress } from '@/lib/storage';
@@ -24,9 +23,9 @@ import {
 	AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import _ from 'lodash';
+import { ModeToggle } from '@/components/theme-toggle';
 
 export default function MishnaTracker() {
-	const { theme, toggleTheme } = useTheme();
 	const [progress, setProgress] = useState<MishnaProgress | null>(null);
 	const [todayMishnayot, setTodayMishnayot] = useState<number[]>([]);
 	const [activeTab, setActiveTab] = useState('today');
@@ -115,9 +114,7 @@ export default function MishnaTracker() {
 									</AlertDialogFooter>
 								</AlertDialogContent>
 							</AlertDialog>
-							<Button variant="outline" size="icon" onClick={toggleTheme}>
-								{theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-							</Button>
+							<ModeToggle />
 						</div>
 					</div>
 				</div>

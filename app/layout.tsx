@@ -31,10 +31,17 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en">
+		<html lang="en" suppressHydrationWarning>
 			<body className={`font-sans antialiased ${shofar.variable} ${garamond.variable}`}>
-				<ThemeProvider>{children}</ThemeProvider>
-				<Analytics />
+				<ThemeProvider
+					attribute="class"
+					defaultTheme="system"
+					enableSystem
+					disableTransitionOnChange
+				>
+					{children}
+					<Analytics />
+				</ThemeProvider>
 			</body>
 		</html>
 	);
