@@ -20,7 +20,6 @@ export function getExpectedChapterIndex(date: Date = new Date()): number {
 }
 
 export function getMishnayotForDate(date: Date = new Date()): number[] {
-	debugger;
 	const baseIndex = getExpectedChapterIndex(date);
 	return Array.from({ length: CHAPTERS_PER_DAY }, (_, i) => baseIndex + i);
 }
