@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Moon, Sun, RotateCcw, BookOpen, Calendar } from 'lucide-react';
 import { useTheme } from '@/hooks/use-theme';
-import { getChapterFromIndex, TOTAL_CHAPTERS } from '@/lib/mishna-data';
+import { getMishnaFromIndex, TOTAL_MISHNAYOT } from '@/lib/mishna-data';
 import { getMishnayotForDate } from '@/lib/date-utils';
 import { loadProgress, toggleChapter, resetProgress, type MishnaProgress } from '@/lib/storage';
 import {
@@ -23,20 +23,21 @@ import {
 	AlertDialogTitle,
 	AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import _ from 'lodash';
 
 export default function MishnaTracker() {
 	const { theme, toggleTheme } = useTheme();
 	const [progress, setProgress] = useState<MishnaProgress | null>(null);
-	const [todayChapters, setTodayChapters] = useState<number[]>([]);
+	const [todayMishnayot, setTodayMishnayot] = useState<number[]>([]);
 	const [activeTab, setActiveTab] = useState('today');
 
 	useEffect(() => {
 		setProgress(loadProgress());
-		setTodayChapters(getMishnayotForDate());
+		setTodayMishnayot(getMishnayotForDate());
 	}, []);
 
-	const handleToggle = (chapterIndex: number) => {
-		const newProgress = toggleChapter(chapterIndex);
+	const handleToggle = (globalIndex: number) => {
+		const newProgress = toggleChapter(globalIndex);
 		setProgress(newProgress);
 	};
 
@@ -54,30 +55,32 @@ export default function MishnaTracker() {
 	}
 
 	// Get today's chapters with details
-	const todayMishnayotDetails = todayChapters
+	const todayMishnayotDetails = _(todayMishnayot)
 		.map((index) => {
-			const chapter = getChapterFromIndex(index);
-			if (!chapter) return null;
+			const mishna = getMishnaFromIndex(index);
+			if (!mishna) return null;
 			return {
-				...chapter,
-				index,
+				...mishna,
 				isCompleted: progress.completedChapters.has(index),
 			};
 		})
-		.filter(Boolean);
+		.compact()
+		.value();
 
 	// Get recent chapters (last 10 days)
-	const recentChapters = Array.from({ length: 20 }, (_, i) => {
-		const index = Math.max(0, todayChapters[0] - 20 + i);
-		const chapter = getChapterFromIndex(index);
-		if (!chapter || index >= TOTAL_CHAPTERS) return null;
-		return {
-			...chapter,
-			index,
-			isCompleted: progress.completedChapters.has(index),
-			isToday: todayChapters.includes(index),
-		};
-	}).filter(Boolean);
+	const recentMishnayot = _.compact(
+		Array.from({ length: 20 }, (_, i) => {
+			const index = todayMishnayot[0] - 20 + i;
+			if (index < 0) return null;
+			const chapter = getMishnaFromIndex(index);
+			if (!chapter || index >= TOTAL_MISHNAYOT) return null;
+			return {
+				...chapter,
+				isCompleted: progress.completedChapters.has(index),
+				isToday: todayMishnayot.includes(index),
+			};
+		})
+	);
 
 	return (
 		<div className="min-h-screen bg-background">
@@ -88,7 +91,7 @@ export default function MishnaTracker() {
 						<div>
 							<h1 className="text-2xl font-bold text-balance">Daily Mishna Tracker</h1>
 							<p className="text-sm text-muted-foreground">
-								Track your journey through all {TOTAL_CHAPTERS} chapters
+								Track your journey through all {TOTAL_MISHNAYOT} mishnayot
 							</p>
 						</div>
 						<div className="flex items-center gap-2">
@@ -102,7 +105,7 @@ export default function MishnaTracker() {
 									<AlertDialogHeader>
 										<AlertDialogTitle>Reset Progress?</AlertDialogTitle>
 										<AlertDialogDescription>
-											This will clear all your completed chapters and reset your streaks. This
+											This will clear all your completed mishnayot and reset your streaks. This
 											action cannot be undone.
 										</AlertDialogDescription>
 									</AlertDialogHeader>
@@ -147,31 +150,32 @@ export default function MishnaTracker() {
 									<div className="grid md:grid-cols-2 gap-4">
 										{todayMishnayotDetails.map((mishna) => (
 											<MishnaCard
-												key={mishna.index}
+												key={`${mishna.tractate}-${mishna.chapter}-${mishna.index}`}
 												seder={mishna.seder}
 												tractate={mishna.tractate}
 												chapter={mishna.chapter}
 												index={mishna.index}
 												isCompleted={mishna.isCompleted}
 												isToday={true}
-												onToggle={() => handleToggle(mishna.index)}
+												onToggle={() => handleToggle(mishna.globalIndex)}
 											/>
 										))}
 									</div>
 								</section>
 
 								<section>
-									<h2 className="text-xl font-semibold mb-4">Recent Chapters</h2>
+									<h2 className="text-xl font-semibold mb-4">Recent Mishnayot</h2>
 									<div className="grid md:grid-cols-2 gap-4">
-										{recentChapters.map((chapter) => (
+										{recentMishnayot.toReversed().map((mishna) => (
 											<MishnaCard
-												key={chapter.index}
-												seder={chapter.seder}
-												tractate={chapter.tractate}
-												chapter={chapter.chapter}
-												isCompleted={chapter.isCompleted}
-												isToday={chapter.isToday}
-												onToggle={() => handleToggle(chapter.index)}
+												key={`${mishna.tractate}-${mishna.chapter}-${mishna.index}`}
+												seder={mishna.seder}
+												tractate={mishna.tractate}
+												chapter={mishna.chapter}
+												index={mishna.index}
+												isCompleted={mishna.isCompleted}
+												isToday={mishna.isToday}
+												onToggle={() => handleToggle(mishna.globalIndex)}
 											/>
 										))}
 									</div>
@@ -179,10 +183,7 @@ export default function MishnaTracker() {
 							</TabsContent>
 
 							<TabsContent value="all">
-								<AllTractatesView
-									completedChapters={progress.completedChapters}
-									onChapterClick={handleToggle}
-								/>
+								<AllTractatesView completedMishnayotIndices={progress.completedChapters} />
 							</TabsContent>
 
 							<TabsContent value="calendar">

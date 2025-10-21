@@ -1,145 +1,144 @@
-import { metadata } from '@/app/layout';
-
-export const MISHNA_STRUCTURE = {
-	Zeraim: {
-		Berakhot: 9,
-		Peah: 8,
-		Demai: 7,
-		Kilayim: 9,
-		Sheviit: 10,
-		Terumot: 11,
-		Maasrot: 5,
-		'Maaser Sheni': 5,
-		Challah: 4,
-		Orlah: 3,
-		Bikkurim: 4,
-	},
-	Moed: {
-		Shabbat: 24,
-		Eruvin: 10,
-		Pesachim: 10,
-		Shekalim: 8,
-		Yoma: 8,
-		Sukkah: 5,
-		Beitzah: 5,
-		'Rosh Hashanah': 4,
-		Taanit: 4,
-		Megillah: 4,
-		'Moed Katan': 3,
-		Chagigah: 3,
-	},
-	Nashim: {
-		Yevamot: 16,
-		Ketubot: 13,
-		Nedarim: 11,
-		Nazir: 9,
-		Sotah: 9,
-		Gittin: 9,
-		Kiddushin: 4,
-	},
-	Nezikin: {
-		'Bava Kamma': 10,
-		'Bava Metzia': 10,
-		'Bava Batra': 10,
-		Sanhedrin: 11,
-		Makkot: 3,
-		Shevuot: 8,
-		Eduyot: 8,
-		'Avodah Zarah': 5,
-		Avot: 6,
-		Horayot: 3,
-	},
-	Kodashim: {
-		Zevachim: 14,
-		Menachot: 13,
-		Chullin: 12,
-		Bekhorot: 9,
-		Arakhin: 9,
-		Temurah: 7,
-		Keritot: 6,
-		Meilah: 6,
-		Tamid: 7,
-		Middot: 5,
-		Kinnim: 3,
-	},
-	Tahorot: {
-		Kelim: 30,
-		Oholot: 18,
-		Negaim: 14,
-		Parah: 12,
-		Tahorot: 10,
-		Mikvaot: 10,
-		Niddah: 10,
-		Makhshirin: 6,
-		Zavim: 5,
-		'Tevul Yom': 4,
-		Yadayim: 4,
-		Oktzin: 3,
-	},
-} as const;
+import { data } from '@/data/mishnah_full';
+import _ from 'lodash';
+export const MISHNA_STRUCTURE = data;
 
 export type Seder = keyof typeof MISHNA_STRUCTURE;
 export type Tractate = {
-	[K in Seder]: keyof (typeof MISHNA_STRUCTURE)[K];
+	[K in Seder]: keyof (typeof MISHNA_STRUCTURE)[K]['tractates'];
 }[Seder];
 
 // Calculate total chapters in Mishna
-export const TOTAL_CHAPTERS = Object.values(MISHNA_STRUCTURE).reduce(
-	(total, seder) => total + Object.values(seder).reduce((sum, chapters) => sum + chapters, 0),
+export const TOTAL_MISHNAYOT = _.values(MISHNA_STRUCTURE).reduce(
+	(total, seder) =>
+		total +
+		_.values(seder.tractates).reduce(
+			(sum, tractate) =>
+				sum + _.reduce(tractate.chapters, (acc, chapter) => acc + chapter.numberOfMishnayot, 0),
+			0
+		),
 	0
 );
 
 // Get all tractates in order
-export function getAllTractates(): Array<{ seder: Seder; tractate: string; chapters: number }> {
-	const tractates: Array<{ seder: Seder; tractate: string; chapters: number }> = [];
+export function getAllTractates(): Array<{
+	seder: Seder;
+	tractate: Tractate;
+	mishnayot: number;
+	chapters: number;
+}> {
+	const tractates: Array<{
+		seder: Seder;
+		tractate: Tractate;
+		mishnayot: number;
+		chapters: number;
+	}> = [];
 
-	for (const [seder, tractateMap] of Object.entries(MISHNA_STRUCTURE)) {
-		for (const [tractate, chapters] of Object.entries(tractateMap)) {
+	// Iterate over each Seder (Order)
+	for (const [sederName, sederValue] of _.entries(MISHNA_STRUCTURE) as [
+		Seder,
+		(typeof MISHNA_STRUCTURE)[Seder]
+	][]) {
+		// Within each Seder, iterate over each Tractate
+		for (const [tractateName, tractateValue] of _.entries(sederValue.tractates)) {
+			// Number of chapters in this tractate
+			const totalChapters = _.size(tractateValue.chapters);
+			// Sum total mishnayot across all chapters
+			const totalMishnayot = _.sumBy(
+				_.values(tractateValue.chapters),
+				(chapter) => chapter.numberOfMishnayot
+			);
+
 			tractates.push({
-				seder: seder as Seder,
-				tractate,
-				chapters,
+				seder: sederName,
+				tractate: tractateName as Tractate,
+				chapters: totalChapters,
+				mishnayot: totalMishnayot,
 			});
 		}
 	}
 
-	return tractates;
+	// Sort first by seder order, then tractate order
+	return _.sortBy(tractates, [
+		(t) => MISHNA_STRUCTURE[t.seder].metadata.order,
+		// @ts-expect-error we don't know that the tractate belongs in the given seder
+		(t) => MISHNA_STRUCTURE[t.seder].tractates[t.tractate].metadata.order,
+	]);
 }
 
-// Get chapter index (0-based) in the entire Mishna
-export function getChapterIndex(tractate: string, chapter: number): number {
+// Get the global index of a mishna given its tractate and local mishna number
+export function getMishnaIndex(tractate: Tractate, mishnaLocalIndex: number): number {
 	let index = 0;
 
-	for (const [_seder, tractateMap] of Object.entries(MISHNA_STRUCTURE)) {
-		for (const [currentTractate, chapters] of Object.entries(tractateMap)) {
-			if (currentTractate === tractate) {
-				return index + chapter - 1;
+	// Iterate over sedarim in canonical order
+	const sortedSedarim = _.entries(MISHNA_STRUCTURE).sort(
+		([, a], [, b]) => a.metadata.order - b.metadata.order
+	) as [Seder, (typeof MISHNA_STRUCTURE)[Seder]][];
+
+	for (const [, sederValue] of sortedSedarim) {
+		// Iterate over tractates within seder in canonical order
+		const sortedTractates = _.entries(sederValue.tractates).sort(
+			([, a], [, b]) => a.metadata.order - b.metadata.order
+		);
+
+		for (const [tractateName, tractateValue] of sortedTractates) {
+			if (tractateName === tractate) {
+				// We reached the target tractate — return total so far + local index
+				return index + mishnaLocalIndex;
 			}
-			index += chapters;
+
+			// Otherwise, add all mishnayot in this tractate
+			for (const chapter of _.values(tractateValue.chapters)) {
+				index += chapter.numberOfMishnayot;
+			}
 		}
 	}
 
-	return -1;
+	throw new Error(`Tractate "${tractate}" not found in MISHNA_STRUCTURE`);
 }
 
 // Get tractate and chapter from global index
-export function getChapterFromIndex(
-	index: number
-): { seder: Seder; tractate: string; chapter: number } | null {
-	let currentIndex = 0;
+export function getMishnaFromIndex(globalIndex: number): {
+	seder: Seder;
+	tractate: Tractate;
+	chapter: number;
+	index: number;
+	globalIndex: number;
+} {
+	let count = 0;
 
-	for (const [seder, tractateMap] of Object.entries(MISHNA_STRUCTURE)) {
-		for (const [tractate, chapters] of Object.entries(tractateMap)) {
-			if (index < currentIndex + chapters) {
-				return {
-					seder: seder as Seder,
-					tractate,
-					chapter: index - currentIndex + 1,
-				};
+	// Sort sedarim by canonical order
+	const sortedSedarim = _.entries(MISHNA_STRUCTURE).sort(
+		([, a], [, b]) => a.metadata.order - b.metadata.order
+	) as [Seder, (typeof MISHNA_STRUCTURE)[Seder]][];
+
+	for (const [sederName, sederValue] of sortedSedarim) {
+		// Sort tractates by canonical order
+		const sortedTractates = _.entries(sederValue.tractates).sort(
+			([, a], [, b]) => a.metadata.order - b.metadata.order
+		);
+
+		for (const [tractateName, tractateValue] of sortedTractates) {
+			for (const [chapterKey, chapterValue] of _.entries(tractateValue.chapters)) {
+				const chapterNumber = Number(chapterKey);
+				const { numberOfMishnayot } = chapterValue;
+				if (globalIndex < count + numberOfMishnayot) {
+					// strictly less than
+					// The mishna is within this chapter
+					const mishnaNumber = globalIndex - count + 1; // +1 to make mishna # 1-based within the chapter
+
+					return {
+						seder: sederName,
+						tractate: tractateName as Tractate,
+						chapter: chapterNumber,
+						index: mishnaNumber,
+						globalIndex: globalIndex,
+					};
+				}
+
+				count += numberOfMishnayot;
 			}
-			currentIndex += chapters;
 		}
 	}
 
-	return null;
+	throw new Error(`Global mishna index ${globalIndex} exceeds total mishnayot.`);
 }
