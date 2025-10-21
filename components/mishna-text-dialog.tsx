@@ -161,7 +161,7 @@ function MishnaText({ languageMode, text }: { languageMode: LanguageMode; text: 
 								<Badge variant="outline" className="shrink-0 h-6">
 									{index + 1}
 								</Badge>
-								<p className="text-base leading-relaxed">{parse(mishna)}</p>
+								<p className="text-base leading-relaxed font-garamond text-xl">{parse(mishna)}</p>
 							</div>
 						</TextContainer>
 					))}
@@ -197,7 +197,9 @@ function MishnaText({ languageMode, text }: { languageMode: LanguageMode; text: 
 							<div className="flex-1 relative">
 								<div key={index} className="sticky top-4">
 									<div className="flex gap-3">
-										<p className="text-base leading-relaxed">{parse(text.text[index])}</p>
+										<p className="text-base leading-relaxed font-garamond text-xl">
+											{parse(text.text[index])}
+										</p>
 									</div>
 								</div>
 							</div>
@@ -226,6 +228,7 @@ function TextContainer({ className, children }: { className?: string; children: 
 	return (
 		<div
 			className={`
+        text-xl
   p-4
   border
   last:border-0

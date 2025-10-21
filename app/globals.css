@@ -131,4 +131,7 @@
 	.font-shofar {
 		font-family: var(--font-shofar), sans-serif;
 	}
+	.font-garamond {
+		font-family: var(--font-garamond), serif;
+	}
 }

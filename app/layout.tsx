@@ -19,6 +19,11 @@ const shofar = localFont({
 	variable: '--font-shofar',
 	display: 'swap',
 });
+const garamond = localFont({
+	src: './fonts/Garamond.woff2',
+	variable: '--font-garamond',
+	display: 'swap',
+});
 
 export default function RootLayout({
 	children,
@@ -27,7 +32,7 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en">
-			<body className={`font-sans antialiased ${shofar.variable}`}>
+			<body className={`font-sans antialiased ${shofar.variable} ${garamond.variable}`}>
 				<ThemeProvider>{children}</ThemeProvider>
 				<Analytics />
 			</body>
