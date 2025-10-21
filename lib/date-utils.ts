@@ -1,4 +1,4 @@
-const MISHNA_START_DATE = new Date('2024-01-01'); // Adjust this to your actual start date
+const MISHNA_START_DATE = new Date('2025-10-15').setHours(0, 0, 0, 0);
 const CHAPTERS_PER_DAY = 2;
 
 export function getDaysSinceStart(date: Date = new Date()): number {
