@@ -1,5 +1,6 @@
 import { data } from '@/data/mishnah_full';
 import _ from 'lodash';
+import { MishnaLocation } from './types';
 export const MISHNA_STRUCTURE = data;
 
 export type Seder = keyof typeof MISHNA_STRUCTURE;
@@ -141,4 +142,7 @@ export function getMishnaFromIndex(globalIndex: number): {
 	}
 
 	throw new Error(`Global mishna index ${globalIndex} exceeds total mishnayot.`);
+}
+export function formatLocation(loc: MishnaLocation): string {
+	return `${loc.seder}, ${loc.tractate} ${loc.chapter}:${loc.index}`;
 }

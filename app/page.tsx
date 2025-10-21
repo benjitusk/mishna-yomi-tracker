@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import _ from 'lodash';
 import { ModeToggle } from '@/components/theme-toggle';
+import { PrintSchedule } from '@/components/print-schedule';
 
 export default function MishnaTracker() {
 	const [progress, setProgress] = useState<MishnaProgress | null>(null);
@@ -94,6 +95,7 @@ export default function MishnaTracker() {
 							</p>
 						</div>
 						<div className="flex items-center gap-2">
+							<PrintSchedule />
 							<AlertDialog>
 								<AlertDialogTrigger asChild>
 									<Button variant="outline" size="icon">

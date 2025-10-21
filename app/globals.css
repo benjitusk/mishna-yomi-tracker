@@ -135,3 +135,9 @@
 		font-family: var(--font-garamond), serif;
 	}
 }
+
+@media print {
+	.print-bs-d {
+		@apply fixed text-sm font-semibold top-0 right-0;
+	}
+}
