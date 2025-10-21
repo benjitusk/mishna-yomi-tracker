@@ -231,7 +231,7 @@ function TextContainer({ className, children }: { className?: string; children: 
   last:border-0
   group
   border-t-transparent border-l-transparent border-r-transparent
-  hover:border-t-gray-200 hover:border-l-gray-200 hover:border-r-gray-200
+  hover:border-t-inherit hover:border-l-inherit hover:border-r-inherit
   transition-colors
   duration-200
   rounded-md
