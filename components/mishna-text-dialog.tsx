@@ -19,6 +19,7 @@ import { ExternalLink, BookOpen } from 'lucide-react';
 import { fetchMishnaText, getSefariaUrl, type SefariaText } from '@/lib/sefaria-api';
 import type { Seder } from '@/lib/mishna-data';
 import _ from 'lodash';
+import SafariaLogo from './safaria-logo';
 
 interface MishnaTextDialogProps {
 	seder: Seder;
@@ -57,12 +58,12 @@ export function MishnaTextDialog({ seder, tractate, chapter, children }: MishnaT
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>{children}</DialogTrigger>
 			<DialogContent
-				className={`max-h-[80vh] overflow-x-auto max-w-none ${
+				className={`max-h-[85vh] overflow-x-auto max-w-none ${
 					languageMode === LanguageMode.Both ? 'sm:max-w-6xl' : 'sm:max-w-3xl'
 				}`}
 			>
 				<DialogHeader>
-					<div className="flex items-start justify-between gap-4">
+					<div className="flex items-start justify-between gap-4 mr-4">
 						<div>
 							<DialogTitle className="text-2xl">
 								{tractate} {chapter}
@@ -103,15 +104,18 @@ export function MishnaTextDialog({ seder, tractate, chapter, children }: MishnaT
 									target="_blank"
 									rel="noopener noreferrer"
 								>
+									<SafariaLogo className="h-4 fill-current !w-auto" />
 									<ExternalLink className="h-4 w-4 mr-2" />
-									Sefaria
 								</a>
 							</Button>
 						</div>
 					</div>
 				</DialogHeader>
 
-				<ScrollArea className="h-[60vh] pr-4">
+				<ScrollArea className="h-[75vh] pr-4">
+					<div className="h-4" />
+					<div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-background to-transparent z-1" />
+
 					{loading && (
 						<div className="space-y-4">
 							{Array.from({ length: 5 }).map((_, i) => (
@@ -139,7 +143,7 @@ export function MishnaTextDialog({ seder, tractate, chapter, children }: MishnaT
 						</div>
 					)}
 					<div className="h-4" />
-					<div className="absolute inset-x-0 bottom-[-1px] h-16 bg-gradient-to-t from-background to-transparent" />
+					<div className="absolute inset-x-0 bottom-[-1px] h-12 bg-gradient-to-t from-background to-transparent z-1" />
 				</ScrollArea>
 			</DialogContent>
 		</Dialog>
@@ -152,14 +156,14 @@ function MishnaText({ languageMode, text }: { languageMode: LanguageMode; text: 
 			return (
 				<div className="space-y-4">
 					{text.text.map((mishna, index) => (
-						<div key={index} className="pb-4 border-b last:border-0">
-							<div className="flex gap-3">
+						<TextContainer key={index}>
+							<div className="flex gap-3 p-4 border-b last:border-0">
 								<Badge variant="outline" className="shrink-0 h-6">
 									{index + 1}
 								</Badge>
 								<p className="text-base leading-relaxed">{parse(mishna)}</p>
 							</div>
-						</div>
+						</TextContainer>
 					))}
 				</div>
 			);
@@ -167,16 +171,16 @@ function MishnaText({ languageMode, text }: { languageMode: LanguageMode; text: 
 			return (
 				<div className="space-y-4" dir="rtl">
 					{text.he.map((mishna, index) => (
-						<div key={index} className="pb-4 border-b last:border-0">
+						<TextContainer key={index}>
 							<div className="flex gap-3">
 								<Badge variant="outline" className="shrink-0 h-6">
 									{index + 1}
 								</Badge>
-								<p className="text-base leading-relaxed font-serif" lang="he">
+								<p className="text-base leading-relaxed font-shofar text-xl" lang="he">
 									{mishna}
 								</p>
 							</div>
-						</div>
+						</TextContainer>
 					))}
 				</div>
 			);
@@ -185,30 +189,56 @@ function MishnaText({ languageMode, text }: { languageMode: LanguageMode; text: 
 			return (
 				<div className="space-y-4">
 					{_.range(text.he.length).map((index) => (
-						<div className="md:flex md:gap-6 text-justify" key={index}>
-							<div className="flex-1">
-								<div key={index} className="pb-4 border-b last:border-0">
+						<TextContainer
+							className="md:flex md:gap-6 text-justify border-b last:border-0 pb-8"
+							key={index}
+						>
+							{/* English */}
+							<div className="flex-1 relative">
+								<div key={index} className="sticky top-4">
 									<div className="flex gap-3">
 										<p className="text-base leading-relaxed">{parse(text.text[index])}</p>
 									</div>
 								</div>
 							</div>
 
-							<Badge variant="outline" className="shrink-0 h-6">
+							<Badge variant="outline" className="shrink-0 h-6 sticky top-4">
 								{index + 1}
 							</Badge>
-							<div className="flex-1" dir="rtl">
-								<div key={index} className="pb-4 border-b last:border-0">
+							{/* Hebrew */}
+							<div className="flex-1 relative" dir="rtl">
+								<div key={index} className="sticky top-4">
 									<div className="flex gap-3">
-										<p className="text-base leading-relaxed font-serif" lang="he">
+										<p className="text-base leading-relaxed font-shofar text-xl" lang="he">
 											{text.he[index]}
 										</p>
 									</div>
 								</div>
 							</div>
-						</div>
+						</TextContainer>
 					))}
 				</div>
 			);
 	}
+}
+
+function TextContainer({ className, children }: { className?: string; children: React.ReactNode }) {
+	return (
+		<div
+			className={`
+  p-4
+  border
+  last:border-0
+  group
+  border-t-transparent border-l-transparent border-r-transparent
+  hover:border-t-gray-200 hover:border-l-gray-200 hover:border-r-gray-200
+  transition-colors
+  duration-200
+  rounded-md
+  ${className}
+`}
+		>
+			{children}
+		</div>
+	);
 }
