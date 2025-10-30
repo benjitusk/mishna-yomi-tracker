@@ -2,7 +2,7 @@
 
 import type React from 'react';
 import parse from 'html-react-parser';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
 	Dialog,
 	DialogContent,
@@ -27,6 +27,7 @@ interface MishnaTextDialogProps {
 	seder: Seder;
 	tractate: string;
 	chapter: number;
+	highlightIndex?: number; // 1-based mishna number within chapter to highlight
 	children: React.ReactNode;
 }
 
@@ -36,13 +37,21 @@ enum LanguageMode {
 	Both,
 }
 
-export function MishnaTextDialog({ seder, tractate, chapter, children }: MishnaTextDialogProps) {
+export function MishnaTextDialog({
+	seder,
+	tractate,
+	chapter,
+	highlightIndex,
+	children,
+}: MishnaTextDialogProps) {
 	const { t, locale } = useI18n();
 	const isHebrew = locale === 'he';
 	const [open, setOpen] = useState(false);
 	const [text, setText] = useState<SefariaText | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [languageMode, setLanguageMode] = useState<LanguageMode>(LanguageMode.HebrewOnly);
+	const hasScrolledRef = useRef(false);
+	const lastScrollKeyRef = useRef<string | null>(null);
 
 	useEffect(() => {
 		if (open && !text) {
@@ -58,6 +67,32 @@ export function MishnaTextDialog({ seder, tractate, chapter, children }: MishnaT
 		}
 	}, [open, text, tractate, chapter]);
 
+	// Reset scroll flags whenever the dialog opens
+	useEffect(() => {
+		if (open) {
+			hasScrolledRef.current = false;
+			lastScrollKeyRef.current = null;
+		}
+	}, [open]);
+
+	// Scroll active mishna to top when content is ready or language mode changes
+	useEffect(() => {
+		if (!open || !text || !highlightIndex) return;
+		const key = `${languageMode}-${highlightIndex}`;
+		if (lastScrollKeyRef.current === key) return;
+
+		const id = `mishna-item-${highlightIndex}`;
+		const handle = window.setTimeout(() => {
+			const el = document.getElementById(id);
+			if (el) {
+				el.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+				lastScrollKeyRef.current = key;
+				hasScrolledRef.current = true;
+			}
+		}, 0);
+		return () => window.clearTimeout(handle);
+	}, [open, text, highlightIndex, languageMode]);
+
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>{children}</DialogTrigger>
@@ -67,7 +102,7 @@ export function MishnaTextDialog({ seder, tractate, chapter, children }: MishnaT
 				}`}
 			>
 				<DialogHeader>
-					<div className="flex items-start justify-between gap-4 mr-4">
+					<div className="flex items-start justify-between mr-4">
 						<div>
 							<DialogTitle className="text-2xl">
 								{isHebrew ? getTractateHebrewName(seder, tractate) : tractate} {chapter}
@@ -116,7 +151,7 @@ export function MishnaTextDialog({ seder, tractate, chapter, children }: MishnaT
 					</div>
 				</DialogHeader>
 
-				<ScrollArea className="h-[75vh] pr-4">
+				<ScrollArea className="h-[70vh] pr-4">
 					<div className="h-4" />
 					<div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-background to-transparent z-1" />
 
@@ -141,7 +176,7 @@ export function MishnaTextDialog({ seder, tractate, chapter, children }: MishnaT
 
 					{!loading && text && (
 						<div className="space-y-6">
-							<MishnaText languageMode={languageMode} text={text} />
+							<MishnaText languageMode={languageMode} text={text} highlightIndex={highlightIndex} />
 						</div>
 					)}
 					<div className="h-4" />
@@ -152,83 +187,119 @@ export function MishnaTextDialog({ seder, tractate, chapter, children }: MishnaT
 	);
 }
 
-function MishnaText({ languageMode, text }: { languageMode: LanguageMode; text: SefariaText }) {
+function MishnaText({
+	languageMode,
+	text,
+	highlightIndex,
+}: {
+	languageMode: LanguageMode;
+	text: SefariaText;
+	highlightIndex?: number;
+}) {
+	const scrollMarginClass = languageMode === LanguageMode.Both ? 'scroll-mt-28' : 'scroll-mt-16';
 	switch (languageMode) {
 		case LanguageMode.EnglishOnly:
 			return (
 				<div className="space-y-4">
-					{text.text.map((mishna, index) => (
-						<TextContainer key={index}>
-							<div className="flex gap-3 p-4 border-b last:border-0">
-								<Badge variant="outline" className="shrink-0 h-6">
-									{index + 1}
-								</Badge>
-								<p className="text-base leading-relaxed font-garamond text-xl">{parse(mishna)}</p>
-							</div>
-						</TextContainer>
-					))}
+					{text.text.map((mishna, index) => {
+						const isActive = highlightIndex === index + 1;
+						const id = `mishna-item-${index + 1}`;
+						const classes = `${isActive ? 'bg-accent/15 rounded-md ' : ''}${scrollMarginClass}`;
+						return (
+							<TextContainer key={index} className={classes} id={id}>
+								<div className="flex gap-3 p-4 border-b last:border-0">
+									<Badge variant={isActive ? 'default' : 'outline'} className="shrink-0 h-6">
+										{index + 1}
+									</Badge>
+									<p className="text-base leading-relaxed font-garamond text-xl">{parse(mishna)}</p>
+								</div>
+							</TextContainer>
+						);
+					})}
 				</div>
 			);
 		case LanguageMode.HebrewOnly:
 			return (
 				<div className="space-y-4" dir="rtl">
-					{text.he.map((mishna, index) => (
-						<TextContainer key={index}>
-							<div className="flex gap-3">
-								<Badge variant="outline" className="shrink-0 h-6">
-									{index + 1}
-								</Badge>
-								<p className="text-base leading-relaxed font-shofar text-xl" lang="he">
-									{mishna}
-								</p>
-							</div>
-						</TextContainer>
-					))}
+					{text.he.map((mishna, index) => {
+						const isActive = highlightIndex === index + 1;
+						const id = `mishna-item-${index + 1}`;
+						const classes = `${isActive ? 'bg-accent/15 rounded-md ' : ''}${scrollMarginClass}`;
+						return (
+							<TextContainer key={index} className={classes} id={id}>
+								<div className="flex gap-3">
+									<Badge variant={isActive ? 'default' : 'outline'} className="shrink-0 h-6">
+										{index + 1}
+									</Badge>
+									<p className="text-base leading-relaxed font-shofar text-xl" lang="he">
+										{mishna}
+									</p>
+								</div>
+							</TextContainer>
+						);
+					})}
 				</div>
 			);
 
 		case LanguageMode.Both:
 			return (
 				<div className="space-y-4">
-					{_.range(text.he.length).map((index) => (
-						<TextContainer
-							className="md:flex md:gap-6 text-justify border-b last:border-0 pb-8"
-							key={index}
-						>
-							{/* English */}
-							<div className="flex-1 relative">
-								<div key={index} className="sticky top-4">
-									<div className="flex gap-3">
-										<p className="text-base leading-relaxed font-garamond text-xl">
-											{parse(text.text[index])}
-										</p>
+					{_.range(text.he.length).map((index) => {
+						const isActive = highlightIndex === index + 1;
+						const id = `mishna-item-${index + 1}`;
+						const base = 'md:flex md:gap-6 text-justify border-b last:border-0 pb-8';
+						const classes = `${base} ${
+							isActive ? 'bg-accent/15 rounded-md' : ''
+						} ${scrollMarginClass}`;
+						return (
+							<TextContainer key={index} className={classes} id={id}>
+								{/* English */}
+								<div className="flex-1 relative">
+									<div key={index} className="sticky top-4">
+										<div className="flex gap-3">
+											<p className="text-base leading-relaxed font-garamond text-xl">
+												{parse(text.text[index])}
+											</p>
+										</div>
 									</div>
 								</div>
-							</div>
 
-							<Badge variant="outline" className="shrink-0 h-6 sticky top-4">
-								{index + 1}
-							</Badge>
-							{/* Hebrew */}
-							<div className="flex-1 relative" dir="rtl">
-								<div key={index} className="sticky top-4">
-									<div className="flex gap-3">
-										<p className="text-base leading-relaxed font-shofar text-xl" lang="he">
-											{text.he[index]}
-										</p>
+								<Badge
+									variant={isActive ? 'default' : 'outline'}
+									className="shrink-0 h-6 sticky top-4"
+								>
+									{index + 1}
+								</Badge>
+								{/* Hebrew */}
+								<div className="flex-1 relative" dir="rtl">
+									<div key={index} className="sticky top-4">
+										<div className="flex gap-3">
+											<p className="text-base leading-relaxed font-shofar text-xl" lang="he">
+												{text.he[index]}
+											</p>
+										</div>
 									</div>
 								</div>
-							</div>
-						</TextContainer>
-					))}
+							</TextContainer>
+						);
+					})}
 				</div>
 			);
 	}
 }
 
-function TextContainer({ className, children }: { className?: string; children: React.ReactNode }) {
+function TextContainer({
+	className,
+	children,
+	id,
+}: {
+	className?: string;
+	children: React.ReactNode;
+	id?: string;
+}) {
 	return (
 		<div
+			id={id}
 			className={`
         text-xl
   p-4
@@ -236,7 +307,7 @@ function TextContainer({ className, children }: { className?: string; children: 
   last:border-0
   group
   border-t-transparent border-l-transparent border-r-transparent
-  hover:border-t-inherit hover:border-l-inherit hover:border-r-inherit
+  hover:border-t-inherit hover:border-l-inherit hover-border-r-inherit
   transition-colors
   duration-200
   rounded-md

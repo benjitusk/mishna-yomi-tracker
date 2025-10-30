@@ -80,7 +80,12 @@ export function MishnaCard({
 						</Badge>
 					)}
 				</div>
-				<MishnaTextDialog seder={seder} tractate={tractate} chapter={chapter}>
+				<MishnaTextDialog
+					seder={seder}
+					tractate={tractate}
+					chapter={chapter}
+					highlightIndex={index}
+				>
 					<Button variant="ghost" size="sm" className="h-8">
 						<BookOpen className="h-4 w-4 me-1" />
 						{t('mishna.read')}
