@@ -1,7 +1,13 @@
-import { formatLocation } from '@/lib/mishna-data';
+import {
+	formatLocation,
+	getSederHebrewName,
+	getTractateHebrewName,
+	type Seder,
+} from '@/lib/mishna-data';
 import { Schedule } from '@/lib/types';
 import { Checkbox } from '@/components/ui/checkbox';
 import { forwardRef } from 'react';
+import { useI18n } from '@/lib/i18n';
 
 function formatDate(dateString: string) {
 	const date = new Date(dateString);
@@ -16,10 +22,31 @@ export const PrintableLayout = forwardRef<HTMLDivElement, { schedule: Schedule }
 	({ schedule }, ref) => {
 		if (!schedule || schedule.assignments.length === 0) return null;
 
-		const formattedStartDate = formatDate(schedule.startDate);
-		const formattedEndDate = formatDate(schedule.endDate);
+		const { t, locale } = useI18n();
+		const isHebrew = locale === 'he';
+
+		const formattedStartDate = new Date(schedule.startDate).toLocaleDateString(
+			isHebrew ? 'he-IL' : undefined,
+			{ year: 'numeric', month: 'long', day: 'numeric' }
+		);
+		const formattedEndDate = new Date(schedule.endDate).toLocaleDateString(
+			isHebrew ? 'he-IL' : undefined,
+			{ year: 'numeric', month: 'long', day: 'numeric' }
+		);
+
+		const formatLocationLocalized = (loc: {
+			seder: string;
+			tractate: string;
+			chapter: number;
+			index: number;
+		}) => {
+			if (!isHebrew) return formatLocation(loc);
+			const heSeder = getSederHebrewName(loc.seder as Seder);
+			const heTractate = getTractateHebrewName(loc.seder as Seder, loc.tractate);
+			return `${heTractate} ${loc.chapter}:${loc.index}`;
+		};
 		return (
-			<div ref={ref} className="p-15 font-garamond">
+			<div ref={ref} className={`p-15 ${isHebrew ? 'font-shofar' : 'font-garamond'}`}>
 				<div className="print-bs-d">בס״ד</div>
 				{/* Cover Page */}
 				<div
@@ -35,10 +62,10 @@ export const PrintableLayout = forwardRef<HTMLDivElement, { schedule: Schedule }
 						)}
 						<div className="mt-13 text-lg space-y-2 text-gray-600">
 							<p>
-								<strong>Start Date:</strong> {formattedStartDate}
+								<strong>{t('printable.startDate')}:</strong> {formattedStartDate}
 							</p>
 							<p>
-								<strong>End Date:</strong> {formattedEndDate}
+								<strong>{t('printable.endDate')}:</strong> {formattedEndDate}
 							</p>
 							<p className="mt-6 font-shofar">
 								<strong>״בְּכָל־יוֹם יִהְיוּ בְעֵינֶיךָ כַּחֲדָשִׁים״</strong>
@@ -55,13 +82,13 @@ export const PrintableLayout = forwardRef<HTMLDivElement, { schedule: Schedule }
 							<tr>
 								<th />
 								<th className="py-3 text-left font-bold text-gray-800 [font-variant:small-caps] tracking-wider">
-									Date
+									{t('printable.table.date')}
 								</th>
 								<th className="py-3 text-left font-bold text-gray-800 [font-variant:small-caps] tracking-wider">
-									Seder
+									{t('printable.table.seder')}
 								</th>
 								<th className="py-3 text-left font-bold text-gray-800 [font-variant:small-caps] tracking-wider">
-									Mishnayot
+									{t('printable.table.mishnayot')}
 								</th>
 							</tr>
 						</thead>
@@ -76,16 +103,18 @@ export const PrintableLayout = forwardRef<HTMLDivElement, { schedule: Schedule }
 										<Checkbox />
 									</td>
 									<td className="py-3 pr-4 whitespace-nowrap text-gray-700 font-medium">
-										{new Date(item.date).toLocaleDateString(undefined, {
+										{new Date(item.date).toLocaleDateString(isHebrew ? 'he-IL' : undefined, {
 											weekday: 'short',
 											year: 'numeric',
 											month: 'short',
 											day: 'numeric',
 										})}
 									</td>
-									<td className="py-3 pr-4 whitespace-nowrap text-gray-600">{item.start.seder}</td>
 									<td className="py-3 pr-4 whitespace-nowrap text-gray-600">
-										{formatLocation(item.start)} - {formatLocation(item.end)}
+										{isHebrew ? getSederHebrewName(item.start.seder as Seder) : item.start.seder}
+									</td>
+									<td className="py-3 pr-4 whitespace-nowrap text-gray-600">
+										{formatLocationLocalized(item.start)} - {formatLocationLocalized(item.end)}
 									</td>
 								</tr>
 							))}

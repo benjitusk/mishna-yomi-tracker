@@ -14,8 +14,10 @@ import { Printer } from 'lucide-react';
 import MishnaYomiForm from './mishna-yomi-form';
 import { Schedule } from '@/lib/types';
 import { PrintableLayout } from './printable-layout';
+import { useI18n } from '@/lib/i18n';
 
 export function PrintSchedule() {
+	const { t } = useI18n();
 	const [isOpen, setIsOpen] = useState(false);
 	const [schedule, setSchedule] = useState<Schedule | null>(null);
 	const [isPrinting, setIsPrinting] = useState(false);
@@ -24,7 +26,7 @@ export function PrintSchedule() {
 	const executePrint = useReactToPrint({
 		contentRef: printableComponentRef,
 		onAfterPrint: () => setIsPrinting(false),
-		documentTitle: 'Mishna Yomi Schedule',
+			documentTitle: t('print.title'),
 		pageStyle: `
 			@page {
 				size: auto;
@@ -53,17 +55,17 @@ export function PrintSchedule() {
 			<DialogTrigger asChild>
 				<Button variant="outline" className="gap-2 bg-transparent">
 					<Printer className="h-4 w-4" />
-					<span className="hidden sm:inline">Print Schedule</span>
+					<span className="hidden sm:inline">{t('print.open')}</span>
 				</Button>
 			</DialogTrigger>
 
 			<DialogContent className="xl:max-w-7xl w-7xl max-h-[90vh] overflow-hidden flex flex-col overflow-y-auto">
 				<DialogHeader>
-					<DialogTitle>Mishna Yomi Schedule</DialogTitle>
+					<DialogTitle>{t('print.title')}</DialogTitle>
 				</DialogHeader>
 
 				<div className="p-8">
-					<h1 className="text-2xl font-bold mb-4">Mishna Yomi Schedule Generator</h1>
+					<h1 className="text-2xl font-bold mb-4">{t('print.generator')}</h1>
 					<MishnaYomiForm
 						onScheduleGenerated={(schedule) => {
 							setIsPrinting(true);

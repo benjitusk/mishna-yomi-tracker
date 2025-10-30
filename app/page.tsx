@@ -28,12 +28,17 @@ import _ from 'lodash';
 import { ModeToggle } from '@/components/theme-toggle';
 import { PrintSchedule } from '@/components/print-schedule';
 import { AccountMenu } from '@/components/account-menu';
+import { LanguageSwitcher } from '@/components/language-switcher';
+import { useI18n } from '@/lib/i18n';
+import { useDir } from '@/components/dir-manager';
 
 export default function MishnaTracker() {
 	const [progress, setProgress] = useState<MishnaProgress | null>(null);
 	const [todayMishnayot, setTodayMishnayot] = useState<number[]>([]);
 	const [activeTab, setActiveTab] = useState('today');
 	const { user } = useAuth();
+	const { t, locale } = useI18n();
+	const isHebrew = locale === 'he';
 
 	useEffect(() => {
 		setProgress(loadProgress());
@@ -78,7 +83,7 @@ export default function MishnaTracker() {
 	if (!progress) {
 		return (
 			<div className="min-h-screen flex items-center justify-center">
-				<p className="text-muted-foreground">Loading...</p>
+				<p className="text-muted-foreground">{t('loading')}</p>
 			</div>
 		);
 	}
@@ -111,16 +116,17 @@ export default function MishnaTracker() {
 		})
 	);
 
+	const dir = useDir();
 	return (
 		<div className="min-h-screen bg-background">
 			{/* Header */}
-			<header className="border-b bg-card sticky top-0 z-10">
+			<header className="border-b bg-card sticky top-0 z-10" dir={isHebrew ? 'rtl' : 'ltr'}>
 				<div className="container mx-auto px-4 py-4">
 					<div className="flex items-center justify-between">
 						<div>
-							<h1 className="text-2xl font-bold text-balance">Daily Mishna Tracker</h1>
+							<h1 className="text-2xl font-bold text-balance">{t('app.title')}</h1>
 							<p className="text-sm text-muted-foreground">
-								Track your journey through all {TOTAL_MISHNAYOT} mishnayot
+								{t('app.subtitle', { count: TOTAL_MISHNAYOT })}
 							</p>
 						</div>
 						<div className="flex items-center gap-2">
@@ -133,19 +139,17 @@ export default function MishnaTracker() {
 								</AlertDialogTrigger>
 								<AlertDialogContent>
 									<AlertDialogHeader>
-										<AlertDialogTitle>Reset Progress?</AlertDialogTitle>
-										<AlertDialogDescription>
-											This will clear all your completed mishnayot and reset your streaks. This
-											action cannot be undone.
-										</AlertDialogDescription>
+										<AlertDialogTitle>{t('reset.title')}</AlertDialogTitle>
+										<AlertDialogDescription>{t('reset.desc')}</AlertDialogDescription>
 									</AlertDialogHeader>
 									<AlertDialogFooter>
-										<AlertDialogCancel>Cancel</AlertDialogCancel>
-										<AlertDialogAction onClick={handleReset}>Reset</AlertDialogAction>
+										<AlertDialogCancel>{t('cancel.btn')}</AlertDialogCancel>
+										<AlertDialogAction onClick={handleReset}>{t('reset.btn')}</AlertDialogAction>
 									</AlertDialogFooter>
 								</AlertDialogContent>
 							</AlertDialog>
 							<ModeToggle />
+							<LanguageSwitcher />
 							<AccountMenu />
 						</div>
 					</div>
@@ -156,26 +160,26 @@ export default function MishnaTracker() {
 			<main className="container mx-auto px-4 py-8">
 				<div className="grid lg:grid-cols-3 gap-8">
 					{/* Left Column - Main Content */}
-					<div className="lg:col-span-2">
-						<Tabs value={activeTab} onValueChange={setActiveTab}>
+					<div className={'lg:col-span-2 lg:row-start-1 lg:col-start-1'}>
+						<Tabs value={activeTab} onValueChange={setActiveTab} dir={dir}>
 							<TabsList className="grid w-full grid-cols-3 mb-6">
 								<TabsTrigger value="today" className="flex items-center gap-2">
 									<BookOpen className="h-4 w-4" />
-									<span className="hidden sm:inline">Today</span>
+									<span className="hidden sm:inline">{t('tabs.today')}</span>
 								</TabsTrigger>
 								<TabsTrigger value="all" className="flex items-center gap-2">
 									<BookOpen className="h-4 w-4" />
-									<span className="hidden sm:inline">All Tractates</span>
+									<span className="hidden sm:inline">{t('tabs.all')}</span>
 								</TabsTrigger>
 								<TabsTrigger value="calendar" className="flex items-center gap-2">
 									<Calendar className="h-4 w-4" />
-									<span className="hidden sm:inline">Calendar</span>
+									<span className="hidden sm:inline">{t('tabs.calendar')}</span>
 								</TabsTrigger>
 							</TabsList>
 
 							<TabsContent value="today" className="space-y-6">
 								<section>
-									<h2 className="text-xl font-semibold mb-4">Today's Mishnayot</h2>
+									<h2 className="text-xl font-semibold mb-4">{t('today.title')}</h2>
 									<div className="grid md:grid-cols-2 gap-4">
 										{todayMishnayotDetails.map((mishna) => (
 											<MishnaCard
@@ -193,7 +197,7 @@ export default function MishnaTracker() {
 								</section>
 
 								<section>
-									<h2 className="text-xl font-semibold mb-4">Recent Mishnayot</h2>
+									<h2 className="text-xl font-semibold mb-4">{t('recent.title')}</h2>
 									<div className="grid md:grid-cols-2 gap-4">
 										{recentMishnayot.toReversed().map((mishna) => (
 											<MishnaCard
@@ -221,8 +225,12 @@ export default function MishnaTracker() {
 						</Tabs>
 					</div>
 
-					{/* Right Column - Stats */}
-					<div className="lg:col-span-1">
+					{/* Right Column - Stats (moves to left in Hebrew) */}
+					<div
+						className={`lg:col-span-1 lg:row-start-1 ${
+							isHebrew ? 'lg:col-start-3' : 'lg:col-start-3'
+						}`}
+					>
 						<div className="sticky top-24">
 							<ProgressStats
 								completedCount={progress.completedChapters.size}

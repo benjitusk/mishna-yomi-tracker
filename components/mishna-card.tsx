@@ -8,6 +8,8 @@ import { BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Seder } from '@/lib/mishna-data';
 import { MishnaTextDialog } from './mishna-text-dialog';
+import { getSederHebrewName, MISHNA_STRUCTURE } from '@/lib/mishna-data';
+import { useI18n } from '@/lib/i18n';
 
 interface MishnaCardProps {
 	seder: Seder;
@@ -37,6 +39,13 @@ export function MishnaCard({
 	isToday,
 	onToggle,
 }: MishnaCardProps) {
+	const { locale, t } = useI18n();
+	const isHebrew = locale === 'he';
+	const sederDisplay = isHebrew ? getSederHebrewName(seder) : seder;
+	const tractateDisplay = isHebrew
+		? MISHNA_STRUCTURE[seder].tractates[tractate]?.metadata.hebrewName || tractate
+		: tractate;
+
 	return (
 		<Card
 			className={cn(
@@ -49,10 +58,10 @@ export function MishnaCard({
 				<div className="flex items-start justify-between gap-2">
 					<div className="flex-1">
 						<Badge className={cn('mb-2', SEDER_COLORS[seder])} variant="secondary">
-							{seder}
+							{sederDisplay}
 						</Badge>
 						<CardTitle className="text-lg leading-tight">
-							{tractate} {chapter}:{index}
+							{tractateDisplay} {chapter}:{index}
 						</CardTitle>
 					</div>
 					<Checkbox
@@ -67,14 +76,14 @@ export function MishnaCard({
 				<div>
 					{isToday && (
 						<Badge variant="outline" className="text-xs">
-							Today's Chapter
+							{t('mishna.today')}
 						</Badge>
 					)}
 				</div>
 				<MishnaTextDialog seder={seder} tractate={tractate} chapter={chapter}>
 					<Button variant="ghost" size="sm" className="h-8">
-						<BookOpen className="h-4 w-4 mr-1" />
-						Read
+						<BookOpen className="h-4 w-4 me-1" />
+						{t('mishna.read')}
 					</Button>
 				</MishnaTextDialog>
 			</CardContent>

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getMishnayotForDate, getStartDate } from '@/lib/date-utils';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n';
 
 interface CalendarViewProps {
 	completedChapters: Set<number>;
@@ -60,14 +61,15 @@ export function CalendarView({ completedChapters }: CalendarViewProps) {
 		};
 	};
 
+	const { locale } = useI18n();
 	return (
 		<Card>
 			<CardHeader>
 				<div className="flex items-center justify-between">
 					<CardTitle>
-						{currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+						{currentMonth.toLocaleDateString(locale, { month: 'long', year: 'numeric' })}
 					</CardTitle>
-					<div className="flex gap-2">
+					<div className="flex gap-2" dir="ltr">
 						<Button variant="outline" size="icon" onClick={goToPreviousMonth}>
 							<ChevronLeft className="h-4 w-4" />
 						</Button>

@@ -22,6 +22,22 @@ npm run dev
 
 Authentication uses Google by default; progress is stored per user in Firestore at `users/{uid}/data/mishnaProgress`.
 
+## i18n
+
+This app ships with a lightweight i18n provider and English/Hebrew catalogs.
+
+- Provider: `lib/i18n.tsx` (`I18nProvider`, `useI18n()`)
+- Language switcher: `components/language-switcher.tsx`
+- Usage in components:
+
+```tsx
+import { useI18n } from '@/lib/i18n'
+const { t } = useI18n()
+return <h1>{t('app.title')}</h1>
+```
+
+Locale persists in `localStorage` (`mishna-locale`). Add new keys in the catalogs inside `lib/i18n.tsx`.
+
 ## Getting Started
 
 First, run the development server:

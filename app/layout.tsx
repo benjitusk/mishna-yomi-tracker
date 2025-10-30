@@ -5,6 +5,8 @@ import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import { ThemeProvider } from '@/hooks/use-theme';
 import { AuthProvider } from '@/hooks/use-auth';
+import { I18nProvider } from '@/lib/i18n';
+import { DirManager } from '@/components/dir-manager';
 import localFont from 'next/font/local';
 
 const _geist = Geist({ subsets: ['latin'] });
@@ -34,17 +36,20 @@ export default function RootLayout({
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<body className={`font-sans antialiased ${shofar.variable} ${garamond.variable}`}>
-				<AuthProvider>
-					<ThemeProvider
-						attribute="class"
-						defaultTheme="system"
-						enableSystem
-						disableTransitionOnChange
-					>
-						{children}
-						<Analytics />
-					</ThemeProvider>
-				</AuthProvider>
+				<I18nProvider>
+					<AuthProvider>
+						<ThemeProvider
+							attribute="class"
+							defaultTheme="system"
+							enableSystem
+							disableTransitionOnChange
+						>
+							<DirManager />
+							{children}
+							<Analytics />
+						</ThemeProvider>
+					</AuthProvider>
+				</I18nProvider>
 			</body>
 		</html>
 	);

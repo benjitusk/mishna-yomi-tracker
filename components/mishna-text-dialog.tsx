@@ -20,6 +20,8 @@ import { fetchMishnaText, getSefariaUrl, type SefariaText } from '@/lib/sefaria-
 import type { Seder } from '@/lib/mishna-data';
 import _ from 'lodash';
 import SafariaLogo from './safaria-logo';
+import { useI18n } from '@/lib/i18n';
+import { getSederHebrewName, getTractateHebrewName } from '@/lib/mishna-data';
 
 interface MishnaTextDialogProps {
 	seder: Seder;
@@ -35,6 +37,8 @@ enum LanguageMode {
 }
 
 export function MishnaTextDialog({ seder, tractate, chapter, children }: MishnaTextDialogProps) {
+	const { t, locale } = useI18n();
+	const isHebrew = locale === 'he';
 	const [open, setOpen] = useState(false);
 	const [text, setText] = useState<SefariaText | null>(null);
 	const [loading, setLoading] = useState(false);
@@ -66,11 +70,11 @@ export function MishnaTextDialog({ seder, tractate, chapter, children }: MishnaT
 					<div className="flex items-start justify-between gap-4 mr-4">
 						<div>
 							<DialogTitle className="text-2xl">
-								{tractate} {chapter}
+								{isHebrew ? getTractateHebrewName(seder, tractate) : tractate} {chapter}
 							</DialogTitle>
 							<DialogDescription className="mt-1">
 								<Badge variant="secondary" className="text-xs">
-									{seder}
+									{isHebrew ? getSederHebrewName(seder) : seder}
 								</Badge>
 							</DialogDescription>
 						</div>
@@ -91,12 +95,12 @@ export function MishnaTextDialog({ seder, tractate, chapter, children }: MishnaT
 									});
 								}}
 							>
-								<BookOpen className="h-4 w-4 mr-2" />
+								<BookOpen className="h-4 w-4 me-2" />
 								{languageMode === LanguageMode.HebrewOnly
-									? 'Hebrew Only'
+									? t('dialog.lang.hebrewOnly')
 									: languageMode === LanguageMode.EnglishOnly
-									? 'English Only'
-									: 'Both'}
+									? t('dialog.lang.englishOnly')
+									: t('dialog.lang.both')}
 							</Button>
 							<Button variant="outline" size="sm" asChild>
 								<a
@@ -105,7 +109,7 @@ export function MishnaTextDialog({ seder, tractate, chapter, children }: MishnaT
 									rel="noopener noreferrer"
 								>
 									<SafariaLogo className="h-4 fill-current !w-auto" />
-									<ExternalLink className="h-4 w-4 mr-2" />
+									<ExternalLink className="h-4 w-4 me-2" />
 								</a>
 							</Button>
 						</div>
@@ -130,10 +134,8 @@ export function MishnaTextDialog({ seder, tractate, chapter, children }: MishnaT
 					{!loading && !text && (
 						<div className="flex flex-col items-center justify-center py-12 text-center">
 							<BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-							<p className="text-muted-foreground">Failed to load Mishna text</p>
-							<p className="text-sm text-muted-foreground mt-2">
-								Please try again or visit Sefaria directly
-							</p>
+							<p className="text-muted-foreground">{t('dialog.loadError.title')}</p>
+							<p className="text-sm text-muted-foreground mt-2">{t('dialog.loadError.subtitle')}</p>
 						</div>
 					)}
 

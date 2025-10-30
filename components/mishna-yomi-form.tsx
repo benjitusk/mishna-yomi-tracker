@@ -8,6 +8,7 @@ import { Schedule } from '@/lib/types';
 import { Printer } from 'lucide-react';
 import { getStartDate } from '@/lib/date-utils';
 import { Spinner } from './ui/spinner';
+import { useI18n } from '@/lib/i18n';
 
 interface Props {
 	onScheduleGenerated: (schedule: Schedule) => void;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export default function MishnaYomiForm({ onScheduleGenerated, isPrinting }: Props) {
+	const { t } = useI18n();
 	const [startDate, setStartDate] = useState(getStartDate().toISOString().split('T')[0]);
 	const [mishnayotPerDay, setMishnayotPerDay] = useState(2);
 	const [name, setName] = useState(localStorage.getItem('mishnaYomiName') || '');
@@ -39,13 +41,13 @@ export default function MishnaYomiForm({ onScheduleGenerated, isPrinting }: Prop
 		<form className="space-y-4" onSubmit={handleSubmit}>
 			<div className="flex flex-col">
 				<label htmlFor="name" className="font-medium">
-					Your Name (optional)
+					{t('printForm.nameLabel')}
 				</label>
 				<Input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} />
 			</div>
 			<div className="flex flex-col">
 				<label htmlFor="start-date" className="font-medium">
-					Start Date
+					{t('printForm.startDate')}
 				</label>
 				<Input
 					type="date"
@@ -57,7 +59,7 @@ export default function MishnaYomiForm({ onScheduleGenerated, isPrinting }: Prop
 
 			<div className="flex flex-col">
 				<label htmlFor="mishnayot-per-day" className="font-medium">
-					Mishnayot Per Day
+					{t('printForm.mishnayotPerDay')}
 				</label>
 				<Input
 					type="number"
@@ -70,7 +72,7 @@ export default function MishnaYomiForm({ onScheduleGenerated, isPrinting }: Prop
 
 			<Button type="submit" className="gap-2" disabled={isPrinting}>
 				{isPrinting ? <Spinner /> : <Printer className="h-4 w-4" />}
-				Download PDF
+				{t('printForm.downloadPdf')}
 			</Button>
 		</form>
 	);

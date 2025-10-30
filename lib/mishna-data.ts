@@ -1,7 +1,7 @@
 import { data } from '@/data/mishnah_full';
 import _ from 'lodash';
-import { MishnaLocation } from './types';
-export const MISHNA_STRUCTURE = data;
+import { MishnaLocation, MishnaResolved, MishnaStructure } from './types';
+export const MISHNA_STRUCTURE: MishnaStructure = data as unknown as MishnaStructure;
 
 export type Seder = keyof typeof MISHNA_STRUCTURE;
 export type Tractate = {
@@ -61,8 +61,10 @@ export function getAllTractates(): Array<{
 	// Sort first by seder order, then tractate order
 	return _.sortBy(tractates, [
 		(t) => MISHNA_STRUCTURE[t.seder].metadata.order,
-		// @ts-expect-error we don't know that the tractate belongs in the given seder
-		(t) => MISHNA_STRUCTURE[t.seder].tractates[t.tractate].metadata.order,
+		(t) =>
+			(MISHNA_STRUCTURE[t.seder].tractates as Record<string, { metadata: { order: number } }>)[
+				t.tractate as string
+			]?.metadata.order ?? 0,
 	]);
 }
 
@@ -98,13 +100,7 @@ export function getMishnaIndex(tractate: Tractate, mishnaLocalIndex: number): nu
 }
 
 // Get tractate and chapter from global index
-export function getMishnaFromIndex(globalIndex: number): {
-	seder: Seder;
-	tractate: Tractate;
-	chapter: number;
-	index: number;
-	globalIndex: number;
-} {
+export function getMishnaFromIndex(globalIndex: number): MishnaResolved {
 	let count = 0;
 
 	// Sort sedarim by canonical order
@@ -133,6 +129,10 @@ export function getMishnaFromIndex(globalIndex: number): {
 						chapter: chapterNumber,
 						index: mishnaNumber,
 						globalIndex: globalIndex,
+						sederHebrewName: MISHNA_STRUCTURE[sederName].metadata.hebrewName,
+						tractateHebrewName:
+							MISHNA_STRUCTURE[sederName].tractates[tractateName as string].metadata.hebrewName,
+						chapterHebrewName: chapterValue.hebrewName,
 					};
 				}
 
@@ -145,4 +145,12 @@ export function getMishnaFromIndex(globalIndex: number): {
 }
 export function formatLocation(loc: MishnaLocation): string {
 	return `${loc.seder}, ${loc.tractate} ${loc.chapter}:${loc.index}`;
+}
+
+export function getSederHebrewName(seder: Seder): string {
+	return MISHNA_STRUCTURE[seder].metadata.hebrewName;
+}
+
+export function getTractateHebrewName(seder: Seder, tractate: Tractate): string {
+	return MISHNA_STRUCTURE[seder].tractates[tractate as string].metadata.hebrewName;
 }

@@ -3,7 +3,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { getAllTractates, getMishnaIndex, type Seder } from '@/lib/mishna-data';
+import {
+	getAllTractates,
+	getMishnaIndex,
+	type Seder,
+	getSederHebrewName,
+	getTractateHebrewName,
+} from '@/lib/mishna-data';
+import { useI18n } from '@/lib/i18n';
 import _ from 'lodash';
 
 interface AllTractatesViewProps {
@@ -21,6 +28,8 @@ const SEDER_COLORS: Record<Seder, string> = {
 
 export function AllTractatesView({ completedMishnayotIndices }: AllTractatesViewProps) {
 	const tractates = getAllTractates();
+	const { locale, t } = useI18n();
+	const isHebrew = locale === 'he';
 
 	// Group by Seder
 	const tractatesBySeder = tractates.reduce((acc, tractate) => {
@@ -49,8 +58,10 @@ export function AllTractatesView({ completedMishnayotIndices }: AllTractatesView
 					<section key={seder}>
 						<div className="mb-4">
 							<div className="flex items-center justify-between mb-2">
-								<h2 className="text-2xl font-bold">{seder}</h2>
-								<Badge className={SEDER_COLORS[seder as Seder]} variant="secondary">
+								<h2 className="text-2xl font-bold">
+									{isHebrew ? getSederHebrewName(seder as Seder) : seder}
+								</h2>
+								<Badge className={SEDER_COLORS[seder as Seder]} variant="secondary" dir="ltr">
 									{completedInSeder} / {totalChapters}
 								</Badge>
 							</div>
@@ -67,14 +78,23 @@ export function AllTractatesView({ completedMishnayotIndices }: AllTractatesView
 								return (
 									<Card key={tractate.tractate} className="hover:shadow-md transition-shadow">
 										<CardHeader className="pb-3">
-											<CardTitle className="text-base">{tractate.tractate}</CardTitle>
+											<CardTitle className="text-base">
+												{isHebrew
+													? getTractateHebrewName(tractate.seder as Seder, tractate.tractate)
+													: tractate.tractate}
+											</CardTitle>
 										</CardHeader>
 										<CardContent>
 											<div className="flex items-center justify-between text-sm mb-2">
 												<span className="text-muted-foreground">
-													{tractate.mishnayot} mishnayot
+													{t(
+														tractate.mishnayot === 1
+															? 'tractate.mishnaCount.one'
+															: 'tractate.mishnaCount.other',
+														{ count: tractate.mishnayot }
+													)}
 												</span>
-												<span className="font-medium">
+												<span className="font-medium" dir="ltr">
 													{completedCount} / {tractate.mishnayot}
 												</span>
 											</div>
