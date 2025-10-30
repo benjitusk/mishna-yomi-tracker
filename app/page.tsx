@@ -11,6 +11,8 @@ import { RotateCcw, BookOpen, Calendar } from 'lucide-react';
 import { getMishnaFromIndex, TOTAL_MISHNAYOT } from '@/lib/mishna-data';
 import { getMishnayotForDate } from '@/lib/date-utils';
 import { loadProgress, toggleChapter, resetProgress, type MishnaProgress } from '@/lib/storage';
+import { fetchCloudProgress, saveCloudProgress, resetCloudProgress } from '@/lib/cloud-storage';
+import { useAuth } from '@/hooks/use-auth';
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -25,25 +27,52 @@ import {
 import _ from 'lodash';
 import { ModeToggle } from '@/components/theme-toggle';
 import { PrintSchedule } from '@/components/print-schedule';
+import { AccountMenu } from '@/components/account-menu';
 
 export default function MishnaTracker() {
 	const [progress, setProgress] = useState<MishnaProgress | null>(null);
 	const [todayMishnayot, setTodayMishnayot] = useState<number[]>([]);
 	const [activeTab, setActiveTab] = useState('today');
+	const { user } = useAuth();
 
 	useEffect(() => {
 		setProgress(loadProgress());
 		setTodayMishnayot(getMishnayotForDate());
 	}, []);
 
+	// When a user logs in, hydrate from cloud and merge if necessary
+	useEffect(() => {
+		async function syncFromCloud() {
+			if (!user) return;
+			const cloud = await fetchCloudProgress(user.uid);
+			if (cloud) {
+				setProgress(cloud);
+			} else {
+				const local = loadProgress();
+				// If local has any data, seed cloud with it
+				if (local.completedChapters.size > 0) {
+					await saveCloudProgress(user.uid, local);
+				}
+			}
+		}
+		syncFromCloud();
+	}, [user]);
+
 	const handleToggle = (globalIndex: number) => {
 		const newProgress = toggleChapter(globalIndex);
 		setProgress(newProgress);
+		if (user) {
+			// fire-and-forget save; no need to block UI
+			saveCloudProgress(user.uid, newProgress);
+		}
 	};
 
 	const handleReset = () => {
 		resetProgress();
 		setProgress(loadProgress());
+		if (user) {
+			resetCloudProgress(user.uid);
+		}
 	};
 
 	if (!progress) {
@@ -117,6 +146,7 @@ export default function MishnaTracker() {
 								</AlertDialogContent>
 							</AlertDialog>
 							<ModeToggle />
+							<AccountMenu />
 						</div>
 					</div>
 				</div>
