@@ -68,3 +68,16 @@ export interface MishnaProgressModel {
 	longestStreak: number;
 	startDate: string;
 }
+
+// Shared user document schema (mirror of shared/user.ts for app-side typing)
+export type AppLocale = 'en' | 'he' | 'system'
+
+export interface UserSettings {
+	locale: AppLocale
+}
+
+export interface UserDocument {
+	email: string | null
+	createdAtMs: number
+	settings: UserSettings
+}

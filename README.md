@@ -38,6 +38,32 @@ return <h1>{t('app.title')}</h1>
 
 Locale persists in `localStorage` (`mishna-locale`). Add new keys in the catalogs inside `lib/i18n.tsx`.
 
+## Firebase Functions (Option A layout)
+
+This repo hosts the Next.js app at the root and Cloud Functions in `functions/`.
+
+Structure:
+
+```
+/ (Next.js app)
+/functions (Firebase Cloud Functions)
+```
+
+Functions quickstart:
+
+```
+cd functions
+npm install
+npm run build
+npm run serve   # requires Firebase CLI and firebase.json at repo root
+# deploy
+npm run deploy  # deploys only functions
+```
+
+Included functions:
+- `onUserCreate` (auth trigger): initializes `users/{uid}` doc
+- `syncProgress` (callable): upserts `users/{uid}/data/mishnaProgress`
+
 ## Getting Started
 
 First, run the development server:
